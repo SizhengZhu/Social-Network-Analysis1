@@ -1,6 +1,6 @@
 ---
 title: "HUDK4051: Social Network Analysis"
-author: "Charles Lang"
+author: "Sizheng Zhu"
 date: "1/26/2018"
 output: html_document
 ---
