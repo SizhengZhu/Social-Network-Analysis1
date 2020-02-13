@@ -1,0 +1,264 @@
+---
+title: "HUDK4051: Social Network Analysis"
+author: "Charles Lang"
+date: "1/26/2018"
+output: html_document
+---
+
+In this assignment you will be generating and analyzing three social networks (also known as graphs or sociograms) based on three different measures. You will be using data from:
+
+Representing Classroom Social Structure. Melbourne: Victoria Institute of
+Secondary Education, M. Vickers and S. Chan, (1981)
+
+Available from the Index of Complex Networks ([ICON](https://icon.colorado.edu/#!/))
+
+The data were collected by Vickers & Chan from 29 seventh grade students in a school in Victoria, Australia. Students were asked to nominate their classmates on a number of relations including the following three "layers":  
+
+1. Who do you get on with in the class?  
+2. Who are your best friends in the class?  
+3. Who would you prefer to work with?  
+
+You have a data set for each of these questions, please complete the following tasks.
+
+## Data Wrangling
+
+Manipulate each of the data sets so that it is suitable for building a social network using iGraph.
+
+install.packages("igraph")
+library(igraph)
+
+```{r}
+library(readr)
+best_friends <- read_csv("best.friends.csv")
+View(best_friends)
+get_on_with <- read_csv("get.on.with.csv")
+View(get_on_with)
+work_with <- read_csv("work.with.csv")
+View(work_with)
+
+bf<-data.frame(best_friends[,-1])
+gow<-data.frame(get_on_with[,-1])
+ww<-data.frame(work_with[,-1])
+
+install.packages("dplyr")
+library(dplyr)
+bf1 <- select(bf, from, to)
+gow1 <- select(gow, from, to)
+ww1 <- select(ww, from, to)
+
+bf2 <- select(bf, from, gender.from)
+gow2 <- select(bf, from, gender.from)
+ww2 <- select(ww, from, gender.from)
+
+GF_bf<-unique(bf2)
+GF_gow<-unique(gow2)
+GF_ww<-unique(ww2)
+
+```
+
+## Visualize the Networks
+
+Create a graph for each of the data sets, are the graphs directed or undirected? Visualize each of the graphs you have created and color the nodes according to gender. Save pdfs of your graphs in this directory for upload to Github.
+
+```{r}
+#These graphs are directed.
+
+#best friends
+graph_bf<- graph.data.frame(bf,directed=T)
+pdf("Best Friends.pdf")
+plot(graph_bf,
+     main="Best Friends",
+     vertex.color = ifelse(GF_bf$gender.from == "male", "blue", "pink"),
+     vertex.size = 10,
+     edge.color = "black",
+     edge.arrow.size = 0.3)
+dev.off()
+
+
+#get on with
+graph_gow<- graph.data.frame(gow,directed=T)
+pdf("Gets On with.pdf")
+plot(graph_gow,
+     main="Get On With",
+     vertex.color = ifelse(GF_gow$gender.from == "male", "blue", "pink"),
+     vertex.size = 10,
+     edge.color = "black",
+     edge.arrow.size = 0.3)
+dev.off()
+
+#work with
+graph_ww<- graph.data.frame(ww,directed=T)
+pdf("Work With.pdf")
+plot(graph_ww,
+     main="Work With",
+     vertex.color = ifelse(GF_ww$gender.from == "male", "blue", "pink"),
+     vertex.size = 10,
+     edge.color = "black",
+     edge.arrow.size = 0.3)
+dev.off()
+
+    
+
+```
+
+## Centrality Measures
+
+Who in the class has the highest degree centrality for each measure?
+```{r}
+#best friends
+order(degree(graph_bf, mode="in"),decreasing = T)
+#Student "21" has the highest degree centrality in "best friends". That means most people think "21" is one of their best friends.
+
+#Get On With
+order(degree(graph_gow, mode="in"),decreasing = T)
+#student "14" has the highest degree centrality in "get on with".
+#That means most students get on with "14". 
+
+#Work With
+order(degree(graph_ww, mode="in"),decreasing = T)
+#student "16" has the highest degree centrality in "work with".
+#That means most students prefer to work with "16". 
+```
+
+Does **degree centrality** mean the same thing for each of your networks? Does it make sense for each of your networks?
+#the degree centrality means the same thing for each of my networks, and I think they make sense. I just measure the indegree of each network, which can represent the popularity of each students. The students who has highest degree centrality are the most popular one in each network. 
+
+Who in the class has the highest closeness centrality?
+
+```{r}
+#best friends
+order(closeness(graph_bf, mode = "all", weights = NA),decreasing = T)
+#get on with
+order(closeness(graph_gow, mode = "all", weights = NA),decreasing = T)
+#work with
+order(closeness(graph_ww, mode = "all", weights = NA),decreasing = T)
+#In this class, student "8" has the highest closeness centrality. Student "8" has the highest closeness centrality in "best friends" and "get on with" network and has the second highest closeness centrality in "work with" network, student "6" has the highest closeness centrality. So student "8" has the overall highest closeness centrality. That's to say student "8" has the closest connection with the entire class.
+```
+
+How does **betweeness centrality** differ from degree centrality? Is one more useful than the other? Does their utility differ between your three networks?
+
+#The betweenness centrality for each vertex is the number of these shortest paths that pass through the vertex. It represents the degree of which nodes stand between each other. Usually, in a network graph, the ones with high betweenness centrality are in the center of the graph. 
+#Degree centrality measures the directly relationship of two nodes in the network, while betweeness centrality tells us more about the indirect relationship and the whole graph.
+
+order(betweenness(graph_bf, directed = T, weights = NA), decreasing = T)
+#student "28" has the highest betweenness in "best friends" network
+order(betweenness(graph_gow, directed = T, weights = NA), decreasing = T)
+#student "11" has the highest betweenness in "get on with" network
+order(betweenness(graph_ww, directed = T, weights = NA), decreasing = T)
+#student "11" has the highest betweenness in "work with"
+
+#I cannot say which measure is more useful than another. It depends on the what we want to measure in the network. For example, if we want to find out who has most friends in the class, degree centrality is a good choice; while if we want to know who is the most influential person in the class, betweenness centrality is more useful.
+#I think their utility differ between the three network. In "best friends" and "work with" network, the direct relationship is more important; while in "get on with" network, indirect connection is more useful because it is the network that can interpret the overall connections in the class best.
+
+
+## Simple structures
+
+Count the number of dyads and the number and type of triads using the following commands.
+```{r}
+dyad_census(graph_bf)
+dyad_census(graph_gow)
+dyad_census(graph_ww)
+```
+[Documentation](http://igraph.org/r/doc/dyad_census.html)
+
+```{r}
+triad_census(graph_bf)
+triad_census(graph_gow)
+triad_census(graph_ww)
+```
+[Documentation](http://igraph.org/r/doc/triad_census.html)
+
+Do these metrics tell you anything about the networks? If so what?
+
+I find that "get on with" network has most dyads connections and "best friends" network has least dyads. Usually we get on with many people, and we prefer to work with part of them and just a small part of them can be our best friends. 
+
+I can't find very impressive patterns in triad
+
+## Cliques
+
+Answer the following questions using the [clique functions](http://igraph.org/r/doc/cliques.html)
+
+What is the size of the largest clique(s) in each of the three networks?
+
+```{r}
+clique.number(graph_bf)
+#the size of the largest clique(s) in "best friends" is 7
+clique.number(graph_gow)
+#the size of the largest clique(s) in "get on with" is 12
+clique.number(graph_ww)
+#the size of the largest clique(s) in "work with" us 9
+```
+
+Which nodes/vertices are in the largest cliques for the three networks? Is there much overlap?
+
+```{r}
+largest.cliques(graph_bf)
+#23 14 15 19 20 21 22 16 8 11 are in the largest cliques for "best friends", and 14, 20, 22 appear in all the 5 cliques.
+largest.cliques(graph_gow)
+#8 11 27 15 13 24 23 20 14 19 22 26 21 16 are in the largest cliques for "get on with", and 8 11 15 13 24 23 20 14 19 appear in all the 4 cliques.
+largest.cliques(graph_ww)
+#6 15 16 14 19 23 20 21 22 8 11 are in the largest cliques for "work with", and 6 16 14 20 21 22 23 appear in all the 3 cliques.
+
+#student 14 and 20 are in all the largest cliques for three networks. They may be the very popular and influential persons in the class.
+
+#And I think there is a huge overlap within "work with" and "get on with" network. The overlap in "best friends" is not as large as others. 
+```
+
+How many **maximal cliques** are there in each of the networks?
+
+```{r}
+count_max_cliques(graph_bf)
+#There are 35 maximal cliques in "best friends"
+count_max_cliques(graph_gow)
+#There are 64 maximal cliques in "best friends"
+count_max_cliques(graph_ww)
+#There are 36 maximal cliques in "best friends"
+```
+
+## Components & Cutpoints
+
+Find the cutpoints (articulation points) for each of the three networks you generated. What does this tell you about the graphs? Does what you find match a visual exploration of the networks?
+```{r}
+articulation_points(graph_bf)
+#the cutpoints for "best friends" is 13
+articulation_points(graph_gow)
+#no cut points for "get on with"
+articulation_points(graph_ww)
+#the cutpoints for "work with" is 13
+
+# 13 is a crucial node connecting the members in "best friends" and "work with" network. If we remove 13, it disconnects the graphs. In "get on with" network, there is no such a cutpoint. 
+# In the visualization graphs, I find that student 25 and 18 are the two "outliers" in "best friends" and "work with". In the class, 13 has good relationships with them and with other members. Without the connection with 13, 25 and 18 would be isolated from other students in the two networks.
+
+```
+
+## Putting it all together
+
+Write a narrative description of the social ties among members of this 7th grade class using the network, centrality and structural metrics you have developed. Can you provide any recommendations to the teacher of this class based on your analysis? What other information would you want to know? Can you remeber being in seventh grade, does this refelct your experience?
+
+```{r}
+# Generally speaking, this 7th grade class is well-connected with no one isolated from others in every networks. 
+
+#There are some very popular and influential students and some outliers in the class. The teacher may group the students with high centrality and low centrality together to help outliers make more connection. 
+
+#From the visulization graph, I find that students prefer to have connection with same gendered students. Based on this phenomenon，I recommend teacher to balance the gender distribution in study groups or other activities to encourage students have more connection with more people.
+
+#I'd like to know about the students with low centrality. According to my experience in school as a student and a teacher, they need more help from teacher.
+
+order(degree(graph_bf, mode="in"),decreasing = F)
+order(degree(graph_gow, mode="in"),decreasing = F)
+order(degree(graph_ww, mode="in"),decreasing = F)
+#Student "9" has the lowest degree centrality in those three network. In the visulization graph I find student 9 think he has some good friends and prefer to work with some classmates, but no one like work with him and just one student think he is a friend. 
+
+order(closeness(graph_bf, mode = "all", weights = NA),decreasing = F)
+order(closeness(graph_gow, mode = "all", weights = NA),decreasing = F)
+order(closeness(graph_ww, mode = "all", weights = NA),decreasing = F)
+#Student 25 and 18 seems to be not very close to others in the class.  
+
+order(betweenness(graph_bf, directed = T, weights = NA), decreasing = F)
+order(betweenness(graph_gow, directed = T, weights = NA), decreasing = F)
+order(betweenness(graph_ww, directed = T, weights = NA), decreasing = F)
+#Student 7 is in the edge of the network graph. 
+
+#I think the teacher should pay more attention to students with low centrality and find out the reasons for their low centrality (like personality, age, appearance, etc.). And teacher are recommended to offer help if they need.
+
+```{r}
